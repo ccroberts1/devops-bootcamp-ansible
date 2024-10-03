@@ -27,6 +27,35 @@
       args:
         chdir: /home/ec2-user/ansible-exercises
 
+- name: Check for currently running Java app and remove old jar file
+  hosts: java-servers
+  become: True
+  become_user: "{{ user }}"
+  tasks:
+    - name: Find jar file
+      find:
+        paths: /home/{{ user }}
+        patterns: "*.jar"
+        file_type: file
+      register: find_result
+    - debug: msg={{find_result}}
+
+    - name: Get PID of Java running process
+      ignore_errors: yes
+      shell: "ps -few | grep java | awk '{print $2}'"
+      register: running_java_processes
+      when: find_result.files != []
+    - debug: msg={{running_java_processes}}
+
+    - name: Kill running Java processes
+      ignore_errors: yes
+      shell: "kill {{ running_java_processes.stdout_lines[0] }}"
+      when: running_java)processes.stdout_lines | length > 2
+
+    - name: Remove old jar file
+      shell: rm {{find_result.files[0].path}}
+      when: find_Result.files != []
+
 #- name: Deploy app
 #  hosts: java-servers
 #  become: True
