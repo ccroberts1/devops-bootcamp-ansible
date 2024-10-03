@@ -56,12 +56,24 @@
       shell: rm {{find_result.files[0].path}}
       when: find_Result.files != []
 
-#- name: Deploy app
-#  hosts: java-servers
-#  become: True
-#  become_user: {{ user }}
-#  tasks:
-#    - name: Unpack the java file
-#      unarchive:
-#        src: /home/ec2-user/ansible-exercises/
-#        dest: /home/{{ user }}
+- name: Deploy app
+  hosts: java-servers
+  become: True
+  become_user: {{ user }}
+  tasks:
+    - name: Copy jar file to remote server
+      copy:
+        src: "{{ project_dir }}/build/libs/{{ jar_name }}"
+        dest: /home/{{ user }}
+    - name: Start the application
+      command:
+        chdir: /home/{{ user }}
+        cmd: java -jar {{ jar_name }}
+      async: 1000
+      poll: 0
+      register: result
+    - debug: msg="{{ result }}"
+    - name: Check that app has started and is running
+      shell: ps aux | grep java
+      register: app_status
+    - debug: msg="{{ app_status.stdout_lines }}"
