@@ -1,0 +1,38 @@
+---
+- name: Ensure user exists
+  hosts: java-servers
+  tasks:
+    - name: Check if user exists and create if not
+      user:
+        name: "{{ user }}"
+        group: admin
+
+- name: Install Java
+  hosts: java-servers
+  tasks:
+    - name: Update to latest Yum packages
+      ansible.builtin.yum:
+        name: '*'
+        state: latest
+    - name: Install Java version 11
+      ansible.builtin.yum:
+        name: java-11-openjdk
+        state: latest
+
+- name: Build java app
+  hosts: localhost
+  tasks:
+    - name: Build java file with gradle
+      shell: ./gradlew
+      args:
+        chdir: /home/ec2-user/ansible-exercises
+
+#- name: Deploy app
+#  hosts: java-servers
+#  become: True
+#  become_user: {{ user }}
+#  tasks:
+#    - name: Unpack the java file
+#      unarchive:
+#        src: /home/ec2-user/ansible-exercises/
+#        dest: /home/{{ user }}
