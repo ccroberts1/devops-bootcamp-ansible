@@ -1,0 +1,16 @@
+---
+- name: Push to Nexus repo
+  hosts: localhost
+  gather_facts: False
+  tasks:
+    - name: Push jar artifact to Nexus repo
+      no_log: True
+      uri:
+        url: "{{ nexus_url }}/repository/maven-snapshots/com/my/{{ artifact_name }}/{{ artifact_version }}/{{ artifact_name }}-{{ artifact_version }}.jar"
+        method: PUT
+        src: "{{ jar_file_path }}"
+        user: "{{ nexus_user }}"
+        password: "{{ nexus_password }}"
+        force_basic_auth: yes
+        body_format: json
+        status_code: 201
