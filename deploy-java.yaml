@@ -1,31 +1,36 @@
 ---
 - name: Ensure user exists
   hosts: java-servers
+  become: True
   tasks:
     - name: Check if user exists and create if not
       user:
         name: "{{ user }}"
-        group: admin
+        group: adm
 
 - name: Install Java
   hosts: java-servers
+  become: True
+  become_user: root
   tasks:
     - name: Update to latest Yum packages
       ansible.builtin.yum:
         name: '*'
         state: latest
-    - name: Install Java version 11
+    - name: Install Java
       ansible.builtin.yum:
-        name: java-11-openjdk
-        state: latest
+        name: java-11-amazon-corretto.x86_64
+        state: present
 
 - name: Build java app
   hosts: localhost
+  gather_facts: False
   tasks:
     - name: Build java file with gradle
-      shell: ./gradlew
-      args:
-        chdir: /home/ec2-user/ansible-exercises
+      ansible.builtin.command:
+        chdir: "{{ project_dir }}"
+        cmd: ./gradlew
+
 
 - name: Check for currently running Java app and remove old jar file
   hosts: java-servers
@@ -50,16 +55,16 @@
     - name: Kill running Java processes
       ignore_errors: yes
       shell: "kill {{ running_java_processes.stdout_lines[0] }}"
-      when: running_java)processes.stdout_lines | length > 2
+      when: running_java_processes.stdout_lines | length > 2
 
     - name: Remove old jar file
       shell: rm {{find_result.files[0].path}}
-      when: find_Result.files != []
+      when: find_result.files != []
 
 - name: Deploy app
   hosts: java-servers
   become: True
-  become_user: {{ user }}
+  become_user: "{{ user }}"
   tasks:
     - name: Copy jar file to remote server
       copy:
