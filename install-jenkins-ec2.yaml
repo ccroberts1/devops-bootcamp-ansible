@@ -1,0 +1,74 @@
+---
+- name: Create EC2 server
+  amazon.aws.ec2_instance:
+    key_name: "{{ ssh_key }}"
+    vpc_subnet_id: "{{ subnet_id }}"
+    instance_type: t2.small
+    security_group: ansible
+    network_interfaces:
+      - assign_public_ip: true
+    image_id: ami-0fff1b9a61dec8a5f
+    tags:
+      Name: "jenkins-managed-servers"
+
+
+- name: Get ec2 server info
+  hosts: localhost
+  gather_facts: False
+  tasks:
+    - name: Get public ip address of ec2 instance
+      amazon.aws.ec2_instance_info:
+        region: "{{ aws_region }}"
+        filters:
+          "tag:Name": "jenkins-managed-servers"
+        register: ec2_result
+
+- name: Setup server with dependencies
+  hosts: "{{ hostvars['localhost']['ec2_result'].instances[0].public_ip_address }}"
+  become: True
+  tasks:
+    - name: Update to latest Yum packages
+      ansible.builtin.yum:
+        name: '*'
+        state: latest
+    - name: Install nodejs, npm and docker
+      yum:
+        name:
+          - nodejs
+          - npm
+          - docker
+        state: present
+    - name: Install Jenkins repo
+      get_url:
+        url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
+        dest: /etc/yum.repos.d/jenkins.repo
+    - name: Setup Jenkins repo key
+      rpm_key:
+        state: present
+        key: https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+    - name: Setup Jenkins repo
+      yum:
+        name: jenkins
+        update_cache: yes
+        state: present
+
+- name: Start Jenkins
+  hosts: "{{ hostvars['localhost']['ec2_result'].instances[0].public_ip_address }}"
+  become: True
+  tasks:
+    - name: Start Jenkins server
+      service:
+        name: jenkins
+        state: started
+    - name: Wait 10 seconds to check Jenkins port
+      pause:
+        seconds: 10
+    - name: Check that Jenkins is running
+      command: netstat -plnt
+      register: jenkins_status
+    - debug: msg={{ jenkins_status }}
+    - name: Get Jenkins admin password
+      slurp:
+        src: /var/lib/jenkins/secrets/initialAdminPassword
+      register: jenkins_pwd
+    - debug: msg={{ jenkins_pwd['content'] }}
