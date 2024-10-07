@@ -1,0 +1,48 @@
+---
+- name: Setup server with dependencies
+  hosts: jenkins-server
+  become: True
+  tasks:
+    - name: Update to latest Yum packages
+      ansible.builtin.yum:
+        name: '*'
+        state: latest
+    - name: Install pip and docker
+      yum:
+        name:
+          - python3-pip
+          - docker
+        state: present
+    - name: Start Docker service
+      systemd:
+        name: docker
+        state: started
+
+- name: Start Jenkins container
+  hosts: jenkins-server
+  become: True
+  tasks:
+    - name: Get location of docker file
+      command:
+        cmd: which docker
+      register: docker_result
+    - name: Start Jenkins container
+      community.docker.docker_container:
+        name: jenkins
+        image: jenkins/jenkins:lts
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+          - "{{ docker_result.stdout }}:/usr/bin/docker"
+          - jenkins_home:/var/jenkins_home
+        ports:
+          - "8080:8080"
+          - "50000:50000"
+
+- name: Set Docker permission
+  hosts: jenkins-server
+  become: True
+  tasks:
+    - name: Set docker permission for Jenkins user
+      file:
+        path: '/var/run/docker.sock'
+        mode: '666'
