@@ -1,6 +1,6 @@
 ---
 - name: Setup server with dependencies
-  hosts: jenkins-server
+  hosts: _Name_jenkins_managed_servers
   become: True
   tasks:
     - name: Update to latest Yum packages
@@ -18,8 +18,9 @@
         name: docker
         state: started
 
+
 - name: Start Jenkins container
-  hosts: jenkins-server
+  hosts: _Name_jenkins_managed_servers
   become: True
   tasks:
     - name: Get location of docker file
@@ -39,7 +40,7 @@
           - "50000:50000"
 
 - name: Set Docker permission
-  hosts: jenkins-server
+  hosts: _Name_jenkins_managed_servers
   become: True
   tasks:
     - name: Set docker permission for Jenkins user
