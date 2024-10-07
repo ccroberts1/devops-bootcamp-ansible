@@ -1,0 +1,24 @@
+    - name: Update to latest Yum packages
+      ansible.builtin.yum:
+        name: '*'
+        state: latest
+    - name: Install nodejs, npm and docker
+      yum:
+        name:
+          - nodejs
+          - npm
+          - docker
+        state: present
+    - name: Install Jenkins repo
+      get_url:
+        url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
+        dest: /etc/yum.repos.d/jenkins.repo
+    - name: Setup Jenkins repo key
+      rpm_key:
+        state: present
+        key: https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+    - name: Setup Jenkins repo
+      yum:
+        name: jenkins
+        update_cache: yes
+        state: present

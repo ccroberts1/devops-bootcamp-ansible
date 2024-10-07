@@ -1,0 +1,32 @@
+---
+- name: Setup server with dependencies
+  hosts: _Name_managed_jenkins_servers
+  become: True
+  tasks:
+    - name: Include task for amazon-linux server
+      include_tasks: host-amazon.yaml
+      when: host_os == "amazon-linux"
+    - name: Include task for ubuntu server
+      include_tasks: host-ubuntu.yaml
+      when: host_os == "ubuntu
+
+- name: Start Jenkins
+  hosts: _Name_managed_jenkins_servers
+  become: True
+  tasks:
+    - name: Start Jenkins server
+      service:
+        name: jenkins
+        state: started
+    - name: Wait 10 seconds to check Jenkins port
+      pause:
+        seconds: 10
+    - name: Check that Jenkins is running
+      command: netstat -plnt
+      register: jenkins_status
+    - debug: msg={{ jenkins_status }}
+    - name: Get Jenkins admin password
+      slurp:
+        src: /var/lib/jenkins/secrets/initialAdminPassword
+      register: jenkins_pwd
+    - debug: msg={{ jenkins_pwd['content'] }}
