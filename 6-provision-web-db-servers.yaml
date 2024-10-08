@@ -1,0 +1,32 @@
+---
+- name: Provision db and web servers
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Start db instance
+      amazon.aws.ec2_instance:
+        name: db-server
+        key_name: "{{ ssh_key }}"
+        region: "{{ aws_region }}"
+        vpc_subnet_id: "{{ subnet_id_db }}"
+        instance_type: t2.micro
+        security_group: ansible
+        image_id: "{{ ami_id }}"
+        network_interfaces:
+          assign_public_ip: false
+        tags:
+          server: database
+
+- name: Start web server instance
+  amazon.aws.ec2_instance:
+    name: db-server
+    key_name: "{{ ssh_key }}"
+    region: "{{ aws_region }}"
+    vpc_subnet_id: "{{ subnet_id_web }}"
+    instance_type: t2.micro
+    security_group: ansible
+    image_id: "{{ ami_id }}"
+    network_interfaces:
+      assign_public_ip: true
+    tags:
+      server: web

@@ -1,0 +1,48 @@
+---
+- name: Configure db server
+  hosts: _Name_database_server
+  vars_files:
+    - 6-vars.yaml
+  roles:
+    - role: geerlingguy.mysql
+      become: True
+  tasks:
+    - name: Validate mysql service has started
+      shell: ps aux | grep mysql
+      register: db_status
+    - debug: msg="{{ db_status.stdout_lines }}"
+
+- name: Install Java
+  hosts: _Name_web_server
+  become: True
+  tasks:
+    - name: Update to latest Yum packages
+      ansible.builtin.yum:
+        name: '*'
+        state: latest
+    - name: Install Java
+      ansible.builtin.yum:
+        name: java-11-amazon-corretto.x86_64
+        state: present
+
+- name: Configure web server
+  hosts: _Name_web_server
+  tasks:
+    - name: Copy jar file to server
+      copy:
+        src: /home/ec2-user/bootcamp-java-mysql-project-1.0-SNAPSHOT.jar
+        dest: java-app.jar
+    - name: Start java app with env vars
+      command: java -jar java-app.jar &
+      environment:
+        DB_USER: my-user
+        DB_PWD: my-pass
+        DB_SERVER: "{{ hostvars[groups['tag_Name_database_server'][0]]['ansible_default_ipv4']['address'] }}"
+        DB_NAME: my-app-db
+      async: 1000
+      poll: 0
+    - name: Validate that java app has started
+      shell: ps aux | grep java
+      register: app_status
+    - debug: msg={{ app_status.stdout_lines }}
+
