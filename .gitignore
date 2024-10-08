@@ -1,3 +1,7 @@
 .venv/
 .idea/
 hosts
+.idea
+build
+out
+.gradle*
