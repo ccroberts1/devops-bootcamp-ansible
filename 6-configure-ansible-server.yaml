@@ -42,6 +42,9 @@
         src: ~/PycharmProjects/DevopsBootcamp_AnsibleExercises
         dest: /home/ec2-user
       with_fileglob: ./6-*.yaml
+    - name: Copy ansible dynamic inventory file
+      src: ~/PycharmProjects/DevopsBootcamp_AnsibleExercises/inventory_aws_ec2.yaml
+      dest: /home/ec2-user
     - name: Copy ansible config file
       ansible.builtin.copy:
         src: ~/PycharmProjects/DevopsBootcamp_AnsibleExercises/ansible.cfg
@@ -49,3 +52,4 @@
     - name: Copy java jar file
       ansible.builtin.copy:
         src: ~/PycharmProjects/ansible-exercises/build/libs/bootcamp-java-mysql-project-1.0-SNAPSHOT.jar
+        dest: /home/ec2-user
